@@ -23,9 +23,6 @@ class CartItems extends HTMLElement {
     }, ON_CHANGE_DEBOUNCE_TIMER);
 
     this.addEventListener('change', debouncedOnChange.bind(this));
-    
-    // Impedir edição direta dos inputs de quantidade
-    this.makeQuantityInputsReadOnly();
   }
 
   cartUpdateUnsubscriber = undefined;
@@ -35,10 +32,7 @@ class CartItems extends HTMLElement {
       if (event.source === 'cart-items') {
         return;
       }
-      const result = this.onCartUpdate();
-      // Reaplica a restrição de edição após atualização do carrinho
-      setTimeout(() => this.makeQuantityInputsReadOnly(), 100);
-      return result;
+      return this.onCartUpdate();
     });
   }
 
@@ -46,31 +40,6 @@ class CartItems extends HTMLElement {
     if (this.cartUpdateUnsubscriber) {
       this.cartUpdateUnsubscriber();
     }
-  }
-  
-  /**
-   * Torna os inputs de quantidade somente leitura, mas mantém os botões funcionais
-   */
-  makeQuantityInputsReadOnly() {
-    // Seleciona todos os inputs de quantidade no carrinho
-    const quantityInputs = this.querySelectorAll('input[name="updates[]"], input[name^="quantity"]');
-    
-    quantityInputs.forEach(input => {
-      // Torna o input somente leitura
-      input.readOnly = true;
-      
-      // Adiciona estilo para indicar que é somente leitura
-      input.style.backgroundColor = '#f8f8f8';
-      input.style.cursor = 'not-allowed';
-      
-      // Impede a edição direta via teclado
-      input.addEventListener('keydown', function(event) {
-        // Permite teclas de navegação (tab, setas) mas bloqueia entrada de texto
-        if (event.key.length === 1 || event.key === 'Delete' || event.key === 'Backspace') {
-          event.preventDefault();
-        }
-      });
-    });
   }
 
   resetQuantityInput(id) {
@@ -97,21 +66,6 @@ class CartItems extends HTMLElement {
       message = window.quickOrderListStrings.max_error.replace('[max]', event.target.max);
     } else if (inputValue % parseInt(event.target.step) !== 0) {
       message = window.quickOrderListStrings.step_error.replace('[step]', event.target.step);
-    } else {
-      // Verificação adicional para valor mínimo do carrinho
-      // Obtém o valor atual do item e o valor total do carrinho
-      const currentItemPrice = this.getItemPrice(event.target);
-      const currentItemQuantity = this.getItemCurrentQuantity(event.target);
-      const cartTotal = this.getCartTotal();
-      
-      // Calcula a diferença de preço com a nova quantidade
-      const priceDifference = currentItemPrice * (inputValue - currentItemQuantity);
-      const newCartTotal = cartTotal + priceDifference;
-      
-      // Verifica se o novo total ficaria abaixo do mínimo (R$90,00 = 9000 centavos)
-      if (newCartTotal < 9000 && newCartTotal > 0) {
-        message = 'O valor mínimo para compra é de R$90,00';
-      }
     }
 
     if (message) {
@@ -244,9 +198,6 @@ class CartItems extends HTMLElement {
             }
           }
           this.updateLiveRegions(line, message);
-          
-          // Reaplica a restrição de edição após atualização do DOM
-          setTimeout(() => this.makeQuantityInputsReadOnly(), 100);
 
           const lineItem =
             document.getElementById(`CartItem-${line}`) || document.getElementById(`CartDrawer-Item-${line}`);
@@ -318,88 +269,6 @@ class CartItems extends HTMLElement {
     cartItemElements.forEach((overlay) => overlay.classList.add('hidden'));
     cartDrawerItemElements.forEach((overlay) => overlay.classList.add('hidden'));
   }
-  
-  /**
-   * Obtém o preço unitário do item a partir do input de quantidade
-   * @param {HTMLElement} quantityInput - O input de quantidade
-   * @return {number} - O preço unitário em centavos
-   */
-  getItemPrice(quantityInput) {
-    // Tenta obter o preço do data attribute
-    if (quantityInput.dataset.unitPrice) {
-      return parseInt(quantityInput.dataset.unitPrice, 10);
-    }
-    
-    // Tenta obter o preço do elemento pai (linha do item)
-    const cartItem = quantityInput.closest('.cart-item');
-    if (cartItem) {
-      // Procura pelo preço unitário no data attribute
-      if (cartItem.dataset.unitPrice) {
-        return parseInt(cartItem.dataset.unitPrice, 10);
-      }
-      
-      // Procura pelo preço no DOM
-      const priceElement = cartItem.querySelector('.price');
-      if (priceElement) {
-        // Extrai apenas os números do texto do preço
-        const priceText = priceElement.textContent;
-        const numericValue = priceText.replace(/[^0-9]/g, '');
-        return parseInt(numericValue, 10);
-      }
-    }
-    
-    // Fallback: tenta obter o preço do objeto Shopify.cart
-    if (window.Shopify && window.Shopify.cart) {
-      const lineItemId = quantityInput.dataset.index;
-      const lineItems = window.Shopify.cart.items;
-      if (lineItems && lineItems[lineItemId - 1]) {
-        return lineItems[lineItemId - 1].price;
-      }
-    }
-    
-    return 0; // Retorna 0 se não conseguir encontrar o preço
-  }
-  
-  /**
-   * Obtém a quantidade atual do item
-   * @param {HTMLElement} quantityInput - O input de quantidade
-   * @return {number} - A quantidade atual
-   */
-  getItemCurrentQuantity(quantityInput) {
-    // Obtém o valor atual do input antes da alteração
-    return parseInt(quantityInput.getAttribute('value') || '1', 10);
-  }
-  
-  /**
-   * Obtém o valor total do carrinho em centavos
-   * @return {number} - O valor total do carrinho em centavos
-   */
-  getCartTotal() {
-    // Tenta obter o valor do carrinho do objeto window.Shopify
-    if (window.Shopify && window.Shopify.cart) {
-      return window.Shopify.cart.total_price || 0;
-    }
-    
-    // Alternativa: buscar o valor do DOM usando data attributes
-    const cartTotalElements = document.querySelectorAll('[data-cart-total]');
-    if (cartTotalElements.length > 0) {
-      for (const element of cartTotalElements) {
-        const value = parseInt(element.getAttribute('data-cart-total') || '0');
-        if (value > 0) return value;
-      }
-    }
-    
-    // Alternativa: buscar o valor do DOM usando classes
-    const totalElements = document.querySelectorAll('.totals__total-value');
-    if (totalElements.length > 0) {
-      // Extrai apenas os números do texto do preço
-      const priceText = totalElements[0].textContent;
-      const numericValue = priceText.replace(/[^0-9]/g, '');
-      return parseInt(numericValue, 10) || 0;
-    }
-    
-    return 0;
-  }
 }
 
 customElements.define('cart-items', CartItems);
@@ -422,70 +291,4 @@ if (!customElements.get('cart-note')) {
       }
     }
   );
-}
-
-// Função para aplicar a restrição de edição em todos os inputs de quantidade no documento
-function makeAllQuantityInputsReadOnly() {
-  const quantityInputs = document.querySelectorAll('input[name="updates[]"], input[name^="quantity"]');
-  
-  quantityInputs.forEach(input => {
-    // Torna o input somente leitura
-    input.readOnly = true;
-    
-    // Adiciona estilo para indicar que é somente leitura
-    input.style.backgroundColor = '#f8f8f8';
-    input.style.cursor = 'not-allowed';
-    
-    // Impede a edição direta via teclado
-    input.addEventListener('keydown', function(event) {
-      // Permite teclas de navegação (tab, setas) mas bloqueia entrada de texto
-      if (event.key.length === 1 || event.key === 'Delete' || event.key === 'Backspace') {
-        event.preventDefault();
-      }
-    });
-  });
-}
-
-// Observador de mutação para detectar novos inputs de quantidade adicionados ao DOM
-const setupMutationObserver = () => {
-  const observer = new MutationObserver((mutations) => {
-    let shouldApply = false;
-    
-    mutations.forEach(mutation => {
-      if (mutation.type === 'childList' && mutation.addedNodes.length) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            if (node.querySelector('input[name="updates[]"], input[name^="quantity"]')) {
-              shouldApply = true;
-              break;
-            }
-          }
-        }
-      }
-    });
-    
-    if (shouldApply) {
-      makeAllQuantityInputsReadOnly();
-    }
-  });
-  
-  // Observa o corpo do documento para detectar mudanças em qualquer parte do DOM
-  observer.observe(document.body, { childList: true, subtree: true });
-};
-
-// Inicializa quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-  makeAllQuantityInputsReadOnly();
-  setupMutationObserver();
-});
-
-// Também inicializar quando o carrinho for atualizado via AJAX
-document.addEventListener('cart:update', () => {
-  makeAllQuantityInputsReadOnly();
-});
-
-// Inicializa imediatamente para casos onde o DOM já está carregado
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  makeAllQuantityInputsReadOnly();
-  setupMutationObserver();
 }
