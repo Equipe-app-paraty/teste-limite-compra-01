@@ -10,6 +10,7 @@
 
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'cart-minimum-value.js' | asset_url }}" defer="defer"></script>
 
 <style>
   .drawer {
@@ -545,15 +546,21 @@
           <button
             type="submit"
             id="CartDrawer-Checkout"
-            class="cart__checkout-button button"
+            class="cart__checkout-button button{% if cart.total_price < 9000 %} button--disabled{% endif %}"
             name="checkout"
             form="CartDrawer-Form"
-            {% if cart == empty %}
+            {% if cart == empty or cart.total_price < 9000 %}
               disabled
             {% endif %}
           >
             {{ 'sections.cart.checkout' | t }}
           </button>
+          
+          {% if cart.total_price < 9000 and cart != empty %}
+            <div class="cart-drawer-error" style="color: red; margin-top: 10px;">
+              O valor mínimo para compra é de R$90,00
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>

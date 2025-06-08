@@ -1,0 +1,8 @@
+- always_use_mcp_tools: true
+- restrict_code_to_shopify_liquid_js: true
+- enforce_minimum_cart_value: 9000
+- use_dawn_theme_structure: true
+- maintain_real_time_updates: true
+- validate_cart_total_in_centavos: true
+- no_local_server_dependencies: true
+- copy_paste_workflow: true
