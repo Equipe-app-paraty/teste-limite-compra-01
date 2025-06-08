@@ -1,3 +1,156 @@
+// Importa a classe CartMinimumValue para validação de valor mínimo
+if (typeof CartMinimumValue === 'undefined') {
+  class CartMinimumValue {
+    constructor() {
+      this.minimumValue = 9000; // R$90,00 em centavos
+      this.errorMessage = 'O valor mínimo para compra é de R$90,00';
+      this.checkoutButtons = [];
+      this.errorContainer = null;
+      this.setupElements();
+    }
+    
+    setupElements() {
+      // Botões de checkout na página do carrinho
+      const mainCartCheckoutBtn = document.querySelector('#checkout');
+      if (mainCartCheckoutBtn) {
+        this.checkoutButtons.push(mainCartCheckoutBtn);
+      }
+      
+      // Botão de checkout no drawer do carrinho
+      const drawerCheckoutBtn = document.querySelector('#CartDrawer-Checkout');
+      if (drawerCheckoutBtn) {
+        this.checkoutButtons.push(drawerCheckoutBtn);
+      }
+      
+      // Botão de checkout na notificação do carrinho
+      const notificationCheckoutBtn = document.querySelector('#cart-notification-form button[name="checkout"]');
+      if (notificationCheckoutBtn) {
+        this.checkoutButtons.push(notificationCheckoutBtn);
+      }
+      
+      // Container para mensagens de erro na página do carrinho
+      this.errorContainer = document.querySelector('#cart-errors');
+      if (!this.errorContainer) {
+        this.errorContainer = document.querySelector('#CartDrawer-CartErrors');
+      }
+    }
+    
+    getCartTotal() {
+      // Tenta obter o valor do carrinho do objeto window.Shopify
+      if (window.Shopify && window.Shopify.cart) {
+        return window.Shopify.cart.total_price || 0;
+      }
+      
+      // Alternativa: buscar o valor do DOM usando data attributes
+      const cartTotalElements = document.querySelectorAll('[data-cart-total]');
+      if (cartTotalElements.length > 0) {
+        for (const element of cartTotalElements) {
+          const value = parseInt(element.getAttribute('data-cart-total') || '0');
+          if (value > 0) return value;
+        }
+      }
+      
+      // Alternativa: buscar o valor do DOM usando classes
+      const totalElements = document.querySelectorAll('.totals__total-value');
+      if (totalElements.length > 0) {
+        // Extrai apenas os números do texto do preço
+        const priceText = totalElements[0].textContent;
+        const numericValue = priceText.replace(/[^0-9]/g, '');
+        return parseInt(numericValue, 10) || 0;
+      }
+      
+      return 0;
+    }
+    
+    isCartValid() {
+      const cartTotal = this.getCartTotal();
+      return cartTotal >= this.minimumValue;
+    }
+    
+    validateCart() {
+      if (this.isCartValid()) {
+        this.enableCheckout();
+        this.hideError();
+      } else {
+        this.disableCheckout();
+        this.showError();
+      }
+    }
+    
+    enableCheckout() {
+      this.checkoutButtons.forEach(button => {
+        button.disabled = false;
+        button.classList.remove('button--disabled');
+      });
+    }
+    
+    disableCheckout() {
+      this.checkoutButtons.forEach(button => {
+        button.disabled = true;
+        button.classList.add('button--disabled');
+      });
+    }
+    
+    showError() {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = this.errorMessage;
+        this.errorContainer.style.display = 'block';
+        this.errorContainer.classList.add('cart-error');
+      }
+      
+      // Cria um elemento de erro para o drawer do carrinho se não existir
+      if (!document.querySelector('.cart-drawer-error')) {
+        const drawerFooter = document.querySelector('.cart-drawer__footer');
+        if (drawerFooter) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-drawer-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          drawerFooter.prepend(errorElement);
+        }
+      }
+      
+      // Cria um elemento de erro para a notificação do carrinho se não existir
+      const cartNotification = document.querySelector('#cart-notification.active');
+      if (cartNotification && !cartNotification.querySelector('.cart-notification-error')) {
+        const notificationLinks = cartNotification.querySelector('.cart-notification__links');
+        if (notificationLinks) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-notification-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          notificationLinks.prepend(errorElement);
+        }
+      }
+    }
+    
+    hideError() {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = '';
+        this.errorContainer.style.display = 'none';
+        this.errorContainer.classList.remove('cart-error');
+      }
+      
+      // Remove mensagens de erro do drawer
+      const drawerError = document.querySelector('.cart-drawer-error');
+      if (drawerError) {
+        drawerError.remove();
+      }
+      
+      // Remove mensagens de erro da notificação
+      const notificationError = document.querySelector('.cart-notification-error');
+      if (notificationError) {
+        notificationError.remove();
+      }
+    }
+  }
+  
+  // Cria uma instância global para ser usada em todo o site
+  window.cartMinimumValueInstance = new CartMinimumValue();
+}
+
 class CartRemoveButton extends HTMLElement {
   constructor() {
     super();
@@ -23,6 +176,9 @@ class CartItems extends HTMLElement {
     }, ON_CHANGE_DEBOUNCE_TIMER);
 
     this.addEventListener('change', debouncedOnChange.bind(this));
+    
+    // Torna os inputs de quantidade somente leitura após o carregamento da página
+    this.makeQuantityInputsReadOnly();
   }
 
   cartUpdateUnsubscriber = undefined;
@@ -40,6 +196,53 @@ class CartItems extends HTMLElement {
     if (this.cartUpdateUnsubscriber) {
       this.cartUpdateUnsubscriber();
     }
+  }
+  
+  /**
+   * Torna todos os inputs de quantidade somente leitura
+   * Isso impede que o usuário digite valores diretamente, permitindo apenas
+   * o uso dos botões de incremento/decremento para alterar a quantidade
+   */
+  makeQuantityInputsReadOnly() {
+    // Aguarda o DOM estar completamente carregado
+    setTimeout(() => {
+      // Seleciona todos os inputs de quantidade no carrinho
+      const quantityInputs = this.querySelectorAll('.quantity__input');
+      
+      // Adiciona o atributo readonly a cada input
+      quantityInputs.forEach(input => {
+        input.setAttribute('readonly', true);
+      });
+      
+      // Adiciona um observador para garantir que novos inputs também sejam somente leitura
+      this.setupQuantityInputObserver();
+    }, 100);
+  }
+  
+  /**
+   * Configura um observador de mutação para monitorar alterações no DOM
+   * e tornar novos inputs de quantidade somente leitura
+   */
+  setupQuantityInputObserver() {
+    // Cria um observador de mutação para monitorar alterações no DOM
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Verifica se novos inputs de quantidade foram adicionados
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const newInputs = node.querySelectorAll('.quantity__input');
+              newInputs.forEach(input => {
+                input.setAttribute('readonly', true);
+              });
+            }
+          });
+        }
+      });
+    });
+    
+    // Inicia a observação do elemento atual e seus descendentes
+    observer.observe(this, { childList: true, subtree: true });
   }
 
   resetQuantityInput(id) {
@@ -99,6 +302,14 @@ class CartItems extends HTMLElement {
             const sourceElement = html.querySelector(selector);
             if (targetElement && sourceElement) {
               targetElement.replaceWith(sourceElement);
+              
+              // Após substituir o elemento, torna os inputs somente leitura
+              if (selector === 'cart-drawer-items') {
+                const drawerItems = document.querySelector('cart-drawer-items');
+                if (drawerItems && typeof drawerItems.makeQuantityInputsReadOnly === 'function') {
+                  drawerItems.makeQuantityInputsReadOnly();
+                }
+              }
             }
           }
         })
@@ -112,6 +323,9 @@ class CartItems extends HTMLElement {
           const html = new DOMParser().parseFromString(responseText, 'text/html');
           const sourceQty = html.querySelector('cart-items');
           this.innerHTML = sourceQty.innerHTML;
+          
+          // Após atualizar o conteúdo, torna os inputs somente leitura
+          this.makeQuantityInputsReadOnly();
         })
         .catch((e) => {
           console.error(e);
@@ -144,6 +358,31 @@ class CartItems extends HTMLElement {
     ];
   }
 
+  /**
+   * Verifica se o carrinho atende ao valor mínimo após a atualização de quantidade
+   * @param {Object} parsedState - Estado do carrinho após atualização
+   * @returns {boolean} - Retorna true se o carrinho é válido, false caso contrário
+   */
+  checkCartMinimumValue(parsedState) {
+    // Obtém a instância de CartMinimumValue ou cria uma nova
+    if (!window.cartMinimumValueInstance) {
+      window.cartMinimumValueInstance = new CartMinimumValue();
+    }
+    
+    // Atualiza o objeto Shopify.cart com os novos dados
+    if (window.Shopify && parsedState) {
+      window.Shopify.cart = {
+        ...window.Shopify.cart,
+        total_price: parsedState.total_price,
+        item_count: parsedState.item_count,
+        items: parsedState.items
+      };
+    }
+    
+    // Verifica se o valor do carrinho é válido
+    return window.cartMinimumValueInstance.isCartValid();
+  }
+
   updateQuantity(line, quantity, event, name, variantId) {
     this.enableLoading(line);
 
@@ -170,6 +409,29 @@ class CartItems extends HTMLElement {
           if (parsedState.errors) {
             quantityElement.value = quantityElement.getAttribute('value');
             this.updateLiveRegions(line, parsedState.errors);
+            return;
+          }
+          
+          // Verifica se o carrinho atende ao valor mínimo após a atualização
+          const isCartValid = this.checkCartMinimumValue(parsedState);
+          
+          // Se o carrinho não atender ao valor mínimo e não for uma remoção de item
+          if (!isCartValid && quantity > 0) {
+            // Restaura o valor original do input
+            quantityElement.value = quantityElement.getAttribute('value');
+            
+            // Reverte a alteração no carrinho
+            this.updateQuantity(line, parseInt(quantityElement.getAttribute('value')), event, name, variantId);
+            
+            // Exibe mensagem de erro
+            const minimumValueInstance = window.cartMinimumValueInstance;
+            this.updateLiveRegions(line, minimumValueInstance.errorMessage);
+            
+            // Exibe mensagem de erro no carrinho
+            if (minimumValueInstance) {
+              minimumValueInstance.showError();
+            }
+            
             return;
           }
 
@@ -272,6 +534,129 @@ class CartItems extends HTMLElement {
 }
 
 customElements.define('cart-items', CartItems);
+
+// Adiciona um script para tornar os inputs de quantidade somente leitura em todo o site
+// e implementar validação de valor mínimo no evento de input e submit
+document.addEventListener('DOMContentLoaded', function() {
+  // Função para tornar todos os inputs de quantidade somente leitura
+  function makeAllQuantityInputsReadOnly() {
+    const quantityInputs = document.querySelectorAll('.quantity__input');
+    quantityInputs.forEach(input => {
+      input.setAttribute('readonly', true);
+      
+      // Adiciona evento de input para validar alterações diretas
+      if (!input.hasAttribute('data-input-handler-attached')) {
+        input.setAttribute('data-input-handler-attached', 'true');
+        
+        // Adiciona evento para capturar alterações diretas no input
+        input.addEventListener('input', function(e) {
+          // Desabilita temporariamente os botões de checkout
+          disableCheckoutButtons();
+          
+          // Armazena o valor original para possível restauração
+          const originalValue = input.getAttribute('value');
+          
+          // Agenda a validação após um pequeno delay para permitir que o valor seja atualizado
+          setTimeout(() => {
+            validateCartAndUpdateUI();
+          }, 100);
+        });
+      }
+    });
+  }
+  
+  // Função para desabilitar temporariamente os botões de checkout
+  function disableCheckoutButtons() {
+    if (!window.cartMinimumValueInstance) {
+      window.cartMinimumValueInstance = new CartMinimumValue();
+    }
+    window.cartMinimumValueInstance.disableCheckout();
+  }
+  
+  // Função para validar o carrinho e atualizar a UI
+  function validateCartAndUpdateUI() {
+    if (!window.cartMinimumValueInstance) {
+      window.cartMinimumValueInstance = new CartMinimumValue();
+    }
+    window.cartMinimumValueInstance.validateCart();
+  }
+  
+  // Adiciona validação de formulário para impedir o envio se o valor mínimo não for atingido
+  function setupFormValidation() {
+    // Seleciona todos os formulários de carrinho
+    const cartForms = document.querySelectorAll('form[action="/cart"]');
+    cartForms.forEach(form => {
+      if (!form.hasAttribute('data-validation-attached')) {
+        form.setAttribute('data-validation-attached', 'true');
+        
+        form.addEventListener('submit', function(e) {
+          // Verifica se o carrinho atende ao valor mínimo
+          if (!window.cartMinimumValueInstance) {
+            window.cartMinimumValueInstance = new CartMinimumValue();
+          }
+          
+          if (!window.cartMinimumValueInstance.isCartValid()) {
+            e.preventDefault(); // Impede o envio do formulário
+            window.cartMinimumValueInstance.showError(); // Exibe mensagem de erro
+            return false;
+          }
+        });
+      }
+    });
+    
+    // Adiciona validação aos botões de checkout
+    const checkoutButtons = document.querySelectorAll('button[name="checkout"], input[name="checkout"]');
+    checkoutButtons.forEach(button => {
+      if (!button.hasAttribute('data-validation-attached')) {
+        button.setAttribute('data-validation-attached', 'true');
+        
+        button.addEventListener('click', function(e) {
+          // Verifica se o carrinho atende ao valor mínimo
+          if (!window.cartMinimumValueInstance) {
+            window.cartMinimumValueInstance = new CartMinimumValue();
+          }
+          
+          if (!window.cartMinimumValueInstance.isCartValid()) {
+            e.preventDefault(); // Impede o clique no botão
+            window.cartMinimumValueInstance.showError(); // Exibe mensagem de erro
+            return false;
+          }
+        });
+      }
+    });
+  }
+  
+  // Executa imediatamente após o carregamento do DOM
+  makeAllQuantityInputsReadOnly();
+  setupFormValidation();
+  validateCartAndUpdateUI();
+  
+  // Configura um observador para monitorar alterações no DOM
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // Verifica se novos inputs de quantidade foram adicionados
+        makeAllQuantityInputsReadOnly();
+        setupFormValidation();
+      }
+    });
+  });
+  
+  // Inicia a observação do documento inteiro
+  observer.observe(document.body, { childList: true, subtree: true });
+  
+  // Adiciona um ouvinte para o evento de atualização do carrinho
+  document.addEventListener('cart:update', function() {
+    makeAllQuantityInputsReadOnly();
+    setupFormValidation();
+    validateCartAndUpdateUI();
+  });
+});
+
+// Define o componente cart-drawer-items se não existir
+if (!customElements.get('cart-drawer-items')) {
+  customElements.define('cart-drawer-items', class extends CartItems {});
+}
 
 if (!customElements.get('cart-note')) {
   customElements.define(
