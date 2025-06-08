@@ -48,12 +48,6 @@
             {{ 'sections.cart.checkout' | t }}
           </button>
         </form>
-        
-        {% if cart.total_price < 9000 and cart != empty %}
-          <div class="cart-notification-error" style="color: red; margin-top: 10px;">
-            O valor mínimo para compra é de R$90,00
-          </div>
-        {% endif %}
         <button type="button" class="link button-label">{{ 'general.continue_shopping' | t }}</button>
       </div>
     </div>
