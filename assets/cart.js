@@ -1,3 +1,156 @@
+// Importa a classe CartMinimumValue para validação de valor mínimo
+if (typeof CartMinimumValue === 'undefined') {
+  class CartMinimumValue {
+    constructor() {
+      this.minimumValue = 9000; // R$90,00 em centavos
+      this.errorMessage = 'O valor mínimo para compra é de R$90,00';
+      this.checkoutButtons = [];
+      this.errorContainer = null;
+      this.setupElements();
+    }
+    
+    setupElements() {
+      // Botões de checkout na página do carrinho
+      const mainCartCheckoutBtn = document.querySelector('#checkout');
+      if (mainCartCheckoutBtn) {
+        this.checkoutButtons.push(mainCartCheckoutBtn);
+      }
+      
+      // Botão de checkout no drawer do carrinho
+      const drawerCheckoutBtn = document.querySelector('#CartDrawer-Checkout');
+      if (drawerCheckoutBtn) {
+        this.checkoutButtons.push(drawerCheckoutBtn);
+      }
+      
+      // Botão de checkout na notificação do carrinho
+      const notificationCheckoutBtn = document.querySelector('#cart-notification-form button[name="checkout"]');
+      if (notificationCheckoutBtn) {
+        this.checkoutButtons.push(notificationCheckoutBtn);
+      }
+      
+      // Container para mensagens de erro na página do carrinho
+      this.errorContainer = document.querySelector('#cart-errors');
+      if (!this.errorContainer) {
+        this.errorContainer = document.querySelector('#CartDrawer-CartErrors');
+      }
+    }
+    
+    getCartTotal() {
+      // Tenta obter o valor do carrinho do objeto window.Shopify
+      if (window.Shopify && window.Shopify.cart) {
+        return window.Shopify.cart.total_price || 0;
+      }
+      
+      // Alternativa: buscar o valor do DOM usando data attributes
+      const cartTotalElements = document.querySelectorAll('[data-cart-total]');
+      if (cartTotalElements.length > 0) {
+        for (const element of cartTotalElements) {
+          const value = parseInt(element.getAttribute('data-cart-total') || '0');
+          if (value > 0) return value;
+        }
+      }
+      
+      // Alternativa: buscar o valor do DOM usando classes
+      const totalElements = document.querySelectorAll('.totals__total-value');
+      if (totalElements.length > 0) {
+        // Extrai apenas os números do texto do preço
+        const priceText = totalElements[0].textContent;
+        const numericValue = priceText.replace(/[^0-9]/g, '');
+        return parseInt(numericValue, 10) || 0;
+      }
+      
+      return 0;
+    }
+    
+    isCartValid() {
+      const cartTotal = this.getCartTotal();
+      return cartTotal >= this.minimumValue;
+    }
+    
+    validateCart() {
+      if (this.isCartValid()) {
+        this.enableCheckout();
+        this.hideError();
+      } else {
+        this.disableCheckout();
+        this.showError();
+      }
+    }
+    
+    enableCheckout() {
+      this.checkoutButtons.forEach(button => {
+        button.disabled = false;
+        button.classList.remove('button--disabled');
+      });
+    }
+    
+    disableCheckout() {
+      this.checkoutButtons.forEach(button => {
+        button.disabled = true;
+        button.classList.add('button--disabled');
+      });
+    }
+    
+    showError() {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = this.errorMessage;
+        this.errorContainer.style.display = 'block';
+        this.errorContainer.classList.add('cart-error');
+      }
+      
+      // Cria um elemento de erro para o drawer do carrinho se não existir
+      if (!document.querySelector('.cart-drawer-error')) {
+        const drawerFooter = document.querySelector('.cart-drawer__footer');
+        if (drawerFooter) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-drawer-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          drawerFooter.prepend(errorElement);
+        }
+      }
+      
+      // Cria um elemento de erro para a notificação do carrinho se não existir
+      const cartNotification = document.querySelector('#cart-notification.active');
+      if (cartNotification && !cartNotification.querySelector('.cart-notification-error')) {
+        const notificationLinks = cartNotification.querySelector('.cart-notification__links');
+        if (notificationLinks) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-notification-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          notificationLinks.prepend(errorElement);
+        }
+      }
+    }
+    
+    hideError() {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = '';
+        this.errorContainer.style.display = 'none';
+        this.errorContainer.classList.remove('cart-error');
+      }
+      
+      // Remove mensagens de erro do drawer
+      const drawerError = document.querySelector('.cart-drawer-error');
+      if (drawerError) {
+        drawerError.remove();
+      }
+      
+      // Remove mensagens de erro da notificação
+      const notificationError = document.querySelector('.cart-notification-error');
+      if (notificationError) {
+        notificationError.remove();
+      }
+    }
+  }
+  
+  // Cria uma instância global para ser usada em todo o site
+  window.cartMinimumValueInstance = new CartMinimumValue();
+}
+
 class CartRemoveButton extends HTMLElement {
   constructor() {
     super();
@@ -144,6 +297,31 @@ class CartItems extends HTMLElement {
     ];
   }
 
+  /**
+   * Verifica se o carrinho atende ao valor mínimo após a atualização de quantidade
+   * @param {Object} parsedState - Estado do carrinho após atualização
+   * @returns {boolean} - Retorna true se o carrinho é válido, false caso contrário
+   */
+  checkCartMinimumValue(parsedState) {
+    // Obtém a instância de CartMinimumValue ou cria uma nova
+    if (!window.cartMinimumValueInstance) {
+      window.cartMinimumValueInstance = new CartMinimumValue();
+    }
+    
+    // Atualiza o objeto Shopify.cart com os novos dados
+    if (window.Shopify && parsedState) {
+      window.Shopify.cart = {
+        ...window.Shopify.cart,
+        total_price: parsedState.total_price,
+        item_count: parsedState.item_count,
+        items: parsedState.items
+      };
+    }
+    
+    // Verifica se o valor do carrinho é válido
+    return window.cartMinimumValueInstance.isCartValid();
+  }
+
   updateQuantity(line, quantity, event, name, variantId) {
     this.enableLoading(line);
 
@@ -170,6 +348,29 @@ class CartItems extends HTMLElement {
           if (parsedState.errors) {
             quantityElement.value = quantityElement.getAttribute('value');
             this.updateLiveRegions(line, parsedState.errors);
+            return;
+          }
+          
+          // Verifica se o carrinho atende ao valor mínimo após a atualização
+          const isCartValid = this.checkCartMinimumValue(parsedState);
+          
+          // Se o carrinho não atender ao valor mínimo e não for uma remoção de item
+          if (!isCartValid && quantity > 0) {
+            // Restaura o valor original do input
+            quantityElement.value = quantityElement.getAttribute('value');
+            
+            // Reverte a alteração no carrinho
+            this.updateQuantity(line, parseInt(quantityElement.getAttribute('value')), event, name, variantId);
+            
+            // Exibe mensagem de erro
+            const minimumValueInstance = window.cartMinimumValueInstance;
+            this.updateLiveRegions(line, minimumValueInstance.errorMessage);
+            
+            // Exibe mensagem de erro no carrinho
+            if (minimumValueInstance) {
+              minimumValueInstance.showError();
+            }
+            
             return;
           }
 
