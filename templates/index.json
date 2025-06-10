@@ -116,7 +116,6 @@
     },
     "featured_collection_6V6DTb": {
       "type": "featured-collection",
-      "disabled": true,
       "name": "t:sections.featured-collection.presets.name",
       "settings": {
         "collection": "cerveja-garrafa",
