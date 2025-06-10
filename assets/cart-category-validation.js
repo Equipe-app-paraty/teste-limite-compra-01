@@ -29,6 +29,13 @@ class CartCategoryValidation {
     this.lockPriority = 1;
     this.checkoutLocked = false;
     
+    // Controle de estado para evitar validações concorrentes
+    this.validationInProgress = false;
+    this.validationLocks = {
+      category: false,  // Lock para validação de categoria
+      value: false      // Lock para validação de valor mínimo
+    };
+    
     // Inicializa a validação
     this.init();
     
@@ -48,30 +55,89 @@ class CartCategoryValidation {
   
   /**
    * Encontra a instância de CartMinimumValue para coordenação
+   * e configura a comunicação entre os validadores
    */
   findMinimumValueValidator() {
     // Aguarda um pequeno tempo para garantir que CartMinimumValue já foi inicializado
     setTimeout(() => {
       // Verifica se a instância global existe
       if (window.cartMinimumValueInstance) {
+        console.log('Instância de CartMinimumValue encontrada, configurando coordenação');
         this.minimumValueValidator = window.cartMinimumValueInstance;
         
+        // Verifica se o validador de valor mínimo tem o sistema de locks
+        if (!this.minimumValueValidator.validationLocks) {
+          console.log('Adicionando sistema de locks ao validador de valor mínimo');
+          this.minimumValueValidator.validationLocks = {
+            category: false,  // Lock para validação de categoria
+            value: false      // Lock para validação de valor mínimo
+          };
+        }
+        
         // Sobrescreve o método validateCart do CartMinimumValue para coordenar as validações
-        const originalValidateCart = this.minimumValueValidator.validateCart;
-        this.minimumValueValidator.validateCart = () => {
-          // Executa a validação original de valor mínimo
-          originalValidateCart.call(this.minimumValueValidator);
+        if (!this.minimumValueValidator._originalValidateCart) {
+          console.log('Configurando coordenação de validação com CartMinimumValue');
           
-          // Se a validação de categoria falhar, ela tem prioridade sobre a de valor mínimo
-          if (!this.isValid) {
-            this.minimumValueValidator.enableCheckout = function() {
-              // Não faz nada quando a validação de categoria falha
+          // Guarda a referência ao método original
+          this.minimumValueValidator._originalValidateCart = this.minimumValueValidator.validateCart;
+          
+          // Sobrescreve o método validateCart
+          this.minimumValueValidator.validateCart = async function() {
+            // Verifica se a validação de categoria está em andamento
+            if (window.cartCategoryValidation && window.cartCategoryValidation.validationInProgress) {
+              console.log('Validação de valor mínimo aguardando validação de categoria...');
+              
+              // Aguarda até que a validação de categoria seja concluída
+              let waitAttempts = 0;
+              while (window.cartCategoryValidation.validationInProgress && waitAttempts < 10) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                waitAttempts++;
+              }
+              
+              // Se ainda estiver em validação após várias tentativas, prossegue mesmo assim
+              if (window.cartCategoryValidation.validationInProgress) {
+                console.log('Validação de categoria ainda em andamento, prosseguindo mesmo assim');
+              }
+            }
+            
+            // Verifica se a validação de categoria falhou
+            if (window.cartCategoryValidation && !window.cartCategoryValidation.isValid) {
+              console.log('Validação de categoria falhou, priorizando seu erro');
+              return false; // Não executa a validação de valor mínimo se a categoria já falhou
+            }
+            
+            // Executa a validação original de valor mínimo
+            try {
+              return await this._originalValidateCart.call(this);
+            } catch (error) {
+              console.error('Erro durante validação de valor mínimo:', error);
               return false;
-            };
-            this.disableCheckout();
-            this.showError();
+            }
+          };
+        }
+        
+        // Configura evento para revalidar quando o estado de validação de categoria mudar
+        document.removeEventListener('category-validation-changed', this._categoryValidationChangedHandler);
+        
+        this._categoryValidationChangedHandler = async (event) => {
+          if (event.detail && event.detail.isValid !== undefined) {
+            console.log(`Evento de mudança de validação de categoria recebido: ${event.detail.isValid ? 'válido' : 'inválido'}`);
+            
+            // Se a validação de categoria passou, verifica o valor mínimo
+            if (event.detail.isValid && this.minimumValueValidator && !this.minimumValueValidator.validationInProgress) {
+              console.log('Categoria válida, revalidando valor mínimo');
+              await this.minimumValueValidator.validateCart();
+            }
           }
         };
+        
+        document.addEventListener('category-validation-changed', this._categoryValidationChangedHandler);
+        
+        console.log('Coordenação entre validadores configurada com sucesso');
+      } else {
+        console.log('Instância de CartMinimumValue não encontrada, tentando novamente em 200ms');
+        // Tenta novamente após um tempo maior
+        setTimeout(() => this.findMinimumValueValidator(), 200);
       }
     }, 100);
   }
@@ -111,23 +177,59 @@ class CartCategoryValidation {
     
     cartEvents.forEach(eventName => {
       document.addEventListener(eventName, () => {
+        // Evita múltiplas validações simultâneas
+        if (this.validationInProgress) return;
+        
         this.setupElements();
-        this.validateCart();
+        this.validateCart().catch(error => {
+          console.error(`Erro ao validar carrinho após evento ${eventName}:`, error);
+        });
       });
     });
     
     // Monitora quando o drawer do carrinho é aberto
     document.addEventListener('drawerOpen', (event) => {
+      // Evita múltiplas validações simultâneas
+      if (this.validationInProgress) return;
+      
       this.setupElements();
-      this.validateCart();
+      this.validateCart().catch(error => {
+        console.error('Erro ao validar carrinho após abertura do drawer:', error);
+      });
+    });
+    
+    // Escuta eventos do validador de valor mínimo
+    document.addEventListener('minimum-value-validation-changed', (event) => {
+      if (event.detail && event.detail.isValid !== undefined) {
+        // Se a validação de valor mínimo mudou, verifica se precisa atualizar a UI
+        if (!this.isValid) {
+          // Se a categoria já é inválida, garante que sua mensagem tenha prioridade
+          this.showError();
+        }
+      }
     });
     
     // Adiciona evento de clique nos botões de checkout para validação adicional
     this.checkoutButtons.forEach(button => {
-      button.addEventListener('click', (event) => {
-        if (!this.isValid) {
+      button.addEventListener('click', async (event) => {
+        // Validação de último momento antes do checkout
+        if (this.validationInProgress) {
+          // Se uma validação estiver em andamento, previne o checkout por segurança
           event.preventDefault();
-          this.showError();
+          return;
+        }
+        
+        try {
+          // Realiza uma validação rápida antes de permitir o checkout
+          const isValid = await this.isCartValid();
+          if (!isValid) {
+            event.preventDefault();
+            this.isValid = false;
+            this.showError();
+          }
+        } catch (error) {
+          console.error('Erro na validação final antes do checkout:', error);
+          // Em caso de erro, permite o checkout para não bloquear o usuário indevidamente
         }
       });
     });
@@ -137,79 +239,380 @@ class CartCategoryValidation {
   }
   
   /**
+   * Busca informações detalhadas de um produto via API
+   * @param {string} handle - O handle (slug) do produto
+   * @returns {Promise} - Promise com as informações do produto
+   */
+  fetchProductInfo(handle) {
+    // Cache para evitar requisições repetidas
+    if (!this.productCache) {
+      this.productCache = {};
+    }
+    
+    // Verifica se já temos as informações em cache
+    if (this.productCache[handle]) {
+      return Promise.resolve(this.productCache[handle]);
+    }
+    
+    // Busca informações do produto via API
+    return fetch(`/products/${handle}.js`)
+      .then(response => response.json())
+      .then(product => {
+        // Armazena em cache
+        this.productCache[handle] = product;
+        return product;
+      })
+      .catch(error => {
+        console.error(`Erro ao buscar informações do produto ${handle}:`, error);
+        return null;
+      });
+  }
+  
+  /**
+   * Busca informações sobre as coleções de um produto
+   * @param {string} productId - O ID do produto
+   * @returns {Promise} - Promise com as coleções do produto
+   */
+  fetchProductCollections(productId) {
+    // Esta função simula a busca de coleções, já que a API JS do Shopify não fornece
+    // diretamente as coleções de um produto. Em um ambiente real, isso seria
+    // implementado via API GraphQL ou endpoint personalizado.
+    
+    // Para fins de demonstração, vamos usar uma abordagem baseada em atributos data
+    // que podem ser adicionados aos elementos do produto no carrinho
+    const productElements = document.querySelectorAll(`[data-product-id="${productId}"]`);
+    const collections = [];
+    
+    productElements.forEach(element => {
+      const collectionsData = element.getAttribute('data-product-collections');
+      if (collectionsData) {
+        try {
+          const parsedCollections = JSON.parse(collectionsData);
+          collections.push(...parsedCollections);
+        } catch (e) {
+          console.error('Erro ao parsear coleções:', e);
+        }
+      }
+    });
+    
+    return Promise.resolve(collections);
+  }
+  
+  /**
+   * Verifica se um produto pertence à categoria de cerveja
+   * @param {Object} product - O objeto do produto
+   * @returns {Promise<boolean>} - Promise que resolve para true se o produto for cerveja
+   */
+  async isBeerProduct(product) {
+    if (!product) return false;
+    
+    // Estratégia 1: Verificar pelo product_type
+    if (product.product_type && product.product_type.toLowerCase().includes(this.beerCategory)) {
+      return true;
+    }
+    
+    // Estratégia 2: Verificar pelo handle do produto
+    if (product.handle && product.handle.toLowerCase().includes(this.beerCategory)) {
+      return true;
+    }
+    
+    // Estratégia 3: Verificar pelas tags do produto
+    if (product.tags && Array.isArray(product.tags)) {
+      for (const tag of product.tags) {
+        if (tag.toLowerCase().includes(this.beerCategory)) {
+          return true;
+        }
+      }
+    }
+    
+    // Estratégia 4: Verificar pelas coleções do produto
+    try {
+      const collections = await this.fetchProductCollections(product.id);
+      for (const collection of collections) {
+        if (collection.toLowerCase().includes(this.beerCategory)) {
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar coleções:', error);
+    }
+    
+    // Estratégia 5: Verificar por metafields personalizados
+    if (product.metafields) {
+      const categoryMetafield = product.metafields.find(m => 
+        m.namespace === 'product' && m.key === 'category'
+      );
+      
+      if (categoryMetafield && categoryMetafield.value.toLowerCase().includes(this.beerCategory)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Verifica se um produto pertence a uma das categorias obrigatórias
+   * @param {Object} product - O objeto do produto
+   * @returns {Promise<boolean>} - Promise que resolve para true se o produto for de categoria obrigatória
+   */
+  async isRequiredCategoryProduct(product) {
+    if (!product) return false;
+    
+    // Estratégia 1: Verificar pelo product_type
+    if (product.product_type) {
+      for (const category of this.requiredCategories) {
+        if (product.product_type.toLowerCase().includes(category)) {
+          return true;
+        }
+      }
+    }
+    
+    // Estratégia 2: Verificar pelo handle do produto
+    if (product.handle) {
+      for (const category of this.requiredCategories) {
+        if (product.handle.toLowerCase().includes(category)) {
+          return true;
+        }
+      }
+    }
+    
+    // Estratégia 3: Verificar pelas tags do produto
+    if (product.tags && Array.isArray(product.tags)) {
+      for (const tag of product.tags) {
+        for (const category of this.requiredCategories) {
+          if (tag.toLowerCase().includes(category)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    // Estratégia 4: Verificar pelas coleções do produto
+    try {
+      const collections = await this.fetchProductCollections(product.id);
+      for (const collection of collections) {
+        for (const category of this.requiredCategories) {
+          if (collection.toLowerCase().includes(category)) {
+            return true;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar coleções:', error);
+    }
+    
+    // Estratégia 5: Verificar por metafields personalizados
+    if (product.metafields) {
+      const categoryMetafield = product.metafields.find(m => 
+        m.namespace === 'product' && m.key === 'category'
+      );
+      
+      if (categoryMetafield) {
+        for (const category of this.requiredCategories) {
+          if (categoryMetafield.value.toLowerCase().includes(category)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
    * Verifica se o carrinho contém produtos da categoria "cerveja"
    */
-  hasBeerProducts() {
+  async hasBeerProducts() {
     if (!window.Shopify || !window.Shopify.cart || !window.Shopify.cart.items) {
       return false;
     }
     
-    return window.Shopify.cart.items.some(item => {
-      // Verifica se o produto_type ou o handle contém a palavra "cerveja"
-      return (
-        (item.product_type && item.product_type.toLowerCase().includes(this.beerCategory)) ||
-        (item.handle && item.handle.toLowerCase().includes(this.beerCategory))
-      );
-    });
+    for (const item of window.Shopify.cart.items) {
+      // Busca informações detalhadas do produto se não estiver em cache
+      let product = this.productCache?.[item.handle];
+      if (!product) {
+        product = await this.fetchProductInfo(item.handle);
+      }
+      
+      if (await this.isBeerProduct(product)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   /**
    * Verifica se o carrinho contém pelo menos um produto das categorias obrigatórias
    */
-  hasRequiredCategoryProducts() {
+  async hasRequiredCategoryProducts() {
     if (!window.Shopify || !window.Shopify.cart || !window.Shopify.cart.items) {
       return false;
     }
     
-    return window.Shopify.cart.items.some(item => {
-      return this.requiredCategories.some(category => {
-        // Verifica se o product_type ou o handle contém alguma das categorias obrigatórias
-        return (
-          (item.product_type && item.product_type.toLowerCase().includes(category)) ||
-          (item.handle && item.handle.toLowerCase().includes(category))
-        );
-      });
-    });
+    for (const item of window.Shopify.cart.items) {
+      // Busca informações detalhadas do produto se não estiver em cache
+      let product = this.productCache?.[item.handle];
+      if (!product) {
+        product = await this.fetchProductInfo(item.handle);
+      }
+      
+      if (await this.isRequiredCategoryProduct(product)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   /**
    * Verifica se o carrinho é válido de acordo com as regras de categoria
+   * @returns {Promise<boolean>} - Promise que resolve para true se o carrinho for válido
    */
-  isCartValid() {
-    // Se não há produtos de cerveja, não há restrições de categoria
-    if (!this.hasBeerProducts()) {
+  async isCartValid() {
+    try {
+      console.log('Verificando validade do carrinho com base nas regras de categoria...');
+      
+      // Verifica se há produtos de cerveja no carrinho
+      const hasBeer = await this.hasBeerProducts();
+      console.log(`Produtos de cerveja encontrados: ${hasBeer}`);
+      
+      // Se não há cerveja, o carrinho é válido independente das outras categorias
+      if (!hasBeer) {
+        console.log('Carrinho não contém cerveja, validação de categoria aprovada');
+        return true;
+      }
+      
+      // Se há cerveja, verifica se há produtos das categorias obrigatórias
+      const hasRequired = await this.hasRequiredCategoryProducts();
+      console.log(`Produtos de categoria obrigatória encontrados: ${hasRequired}`);
+      
+      // Regra: Se tem cerveja, deve ter pelo menos um produto de categoria obrigatória
+      const isValid = hasRequired;
+      console.log(`Resultado da validação de regra de categoria: ${isValid ? 'válido' : 'inválido'}`);
+      
+      return isValid;
+    } catch (error) {
+      console.error('Erro ao verificar validade do carrinho:', error);
+      // Em caso de erro, considera o carrinho válido para não bloquear o usuário indevidamente
       return true;
     }
-    
-    // Se há produtos de cerveja, deve haver pelo menos um produto das categorias obrigatórias
-    return this.hasRequiredCategoryProducts();
   }
   
   /**
    * Valida o carrinho e atualiza a UI conforme necessário
+   * @returns {Promise<boolean>} Retorna o resultado da validação
    */
-  validateCart() {
-    const previousState = this.isValid;
-    this.isValid = this.isCartValid();
-    
-    if (this.isValid) {
-      this.checkoutLocked = false;
-      this.hideError();
-      // Permite que o CartMinimumValue assuma o controle se a validação de categoria passar
-      if (this.minimumValueValidator) {
-        this.minimumValueValidator.validateCart();
+  async validateCart() {
+    try {
+      // Verifica se a validação está em andamento para evitar conflitos
+      if (this.validationInProgress) {
+        console.log('Validação de categoria já em andamento, aguardando...');
+        
+        // Aguarda até que a validação atual seja concluída (com timeout)
+        let waitAttempts = 0;
+        while (this.validationInProgress && waitAttempts < 10) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+          waitAttempts++;
+        }
+        
+        // Se ainda estiver em validação após várias tentativas, retorna o estado atual
+        if (this.validationInProgress) {
+          console.log('Validação de categoria ainda em andamento após espera, retornando estado atual');
+          return this.isValid;
+        }
       }
-    } else {
-      this.checkoutLocked = true;
-      this.disableCheckout();
-      this.showError();
-    }
-    
-    // Se o estado mudou, dispara um evento personalizado para notificar outros validadores
-    if (previousState !== this.isValid) {
-      document.dispatchEvent(new CustomEvent('category-validation-changed', {
-        detail: { isValid: this.isValid, validator: this }
-      }));
+      
+      console.log('Iniciando validação de categoria...');
+      this.validationInProgress = true;
+      this.validationLocks.category = true;
+      
+      // Notifica o validador de valor mínimo que a validação de categoria está em andamento
+      if (this.minimumValueValidator && this.minimumValueValidator.validationLocks) {
+        this.minimumValueValidator.validationLocks.category = true;
+      }
+      
+      const previousState = this.isValid;
+      let validationResult = false;
+      
+      // Usa o detector de categorias externo se disponível
+      if (window.cartCategoryDetection) {
+        console.log('Usando detector de categorias externo');
+        try {
+          validationResult = await window.cartCategoryDetection.isCartValid();
+        } catch (detectionError) {
+          console.error('Erro no detector de categorias externo:', detectionError);
+          // Fallback para implementação interna
+          validationResult = await this.isCartValid();
+        }
+      } else {
+        // Caso contrário, usa a implementação interna
+        console.log('Usando detector de categorias interno');
+        validationResult = await this.isCartValid();
+      }
+      
+      // Atualiza o estado de validação
+      this.isValid = validationResult;
+      console.log(`Resultado da validação de categoria: ${this.isValid ? 'válido' : 'inválido'}`);
+      
+      // Verifica se o validador de valor mínimo está em processo de validação
+      const valueValidator = this.minimumValueValidator || window.cartMinimumValueInstance;
+      const valueValidating = valueValidator && valueValidator.validationInProgress;
+      
+      // Se o validador de valor mínimo estiver em processo de validação, aguarda um pouco
+      if (valueValidating) {
+        console.log('Validador de valor mínimo em processo, aguardando...');
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      if (this.isValid) {
+        console.log('Carrinho válido para categorias, liberando checkout');
+        this.checkoutLocked = false;
+        this.hideError();
+        
+        // Transfere o controle para o validador de valor mínimo
+        if (valueValidator && !valueValidating) {
+          console.log('Transferindo controle para validador de valor mínimo');
+          // Aguarda um curto período para evitar conflitos
+          await new Promise(resolve => setTimeout(resolve, 50));
+          try {
+            await valueValidator.validateCart();
+          } catch (valueError) {
+            console.error('Erro ao chamar validador de valor mínimo:', valueError);
+          }
+        }
+      } else {
+        console.log('Carrinho inválido para categorias, bloqueando checkout');
+        this.checkoutLocked = true;
+        this.disableCheckout();
+        this.showError();
+      }
+      
+      // Se o estado mudou, dispara um evento personalizado
+      if (previousState !== this.isValid) {
+        console.log(`Estado de validação de categoria mudou: ${previousState} -> ${this.isValid}`);
+        document.dispatchEvent(new CustomEvent('category-validation-changed', {
+          detail: { isValid: this.isValid, validator: this }
+        }));
+      }
+      
+      return this.isValid;
+    } catch (error) {
+      console.error('Erro durante a validação de categoria:', error);
+      // Em caso de erro, mantém o estado anterior para evitar bloqueios indevidos
+      this.isValid = true;
+      return true;
+    } finally {
+      // Libera o lock de validação
+      console.log('Validação de categoria concluída');
+      this.validationInProgress = false;
+      this.validationLocks.category = false;
+      
+      // Notifica o validador de valor mínimo que a validação de categoria foi concluída
+      if (this.minimumValueValidator && this.minimumValueValidator.validationLocks) {
+        this.minimumValueValidator.validationLocks.category = false;
+      }
     }
   }
   
@@ -363,28 +766,131 @@ class CartCategoryValidation {
    * para detectar mudanças dinâmicas no DOM
    */
   setupCartObserver() {
-    const cartObserver = new MutationObserver(() => {
-      this.setupElements();
-      this.validateCart();
+    // Usa um temporizador para evitar múltiplas validações em sequência
+    let debounceTimer;
+    let pendingValidation = false;
+    
+    const cartObserver = new MutationObserver((mutations) => {
+      // Verifica se as mutações são relevantes para a validação
+      const relevantMutation = mutations.some(mutation => {
+        // Mudanças na estrutura do DOM (adição/remoção de elementos)
+        if (mutation.type === 'childList') {
+          // Verifica se os nós adicionados/removidos são relevantes (itens do carrinho)
+          const hasRelevantNodes = [...mutation.addedNodes, ...mutation.removedNodes].some(node => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return false;
+            
+            // Verifica se é um item do carrinho ou contém um item do carrinho
+            return node.classList?.contains('cart-item') || 
+                   node.querySelector?.('.cart-item') || 
+                   node.hasAttribute?.('data-cart-item-key');
+          });
+          
+          return hasRelevantNodes;
+        }
+        
+        // Mudanças em atributos relevantes (quantidade, preço, etc.)
+        if (mutation.type === 'attributes') {
+          const relevantAttributes = [
+            'data-cart-item-quantity', 
+            'data-cart-item-price', 
+            'data-cart-item-key',
+            'data-cart-item-product-id',
+            'data-cart-item-variant-id'
+          ];
+          
+          return relevantAttributes.includes(mutation.attributeName);
+        }
+        
+        return false;
+      });
+      
+      if (relevantMutation) {
+        console.log('Detectada mudança relevante no carrinho');
+        
+        // Cancela qualquer validação pendente
+        clearTimeout(debounceTimer);
+        pendingValidation = true;
+        
+        // Agenda uma nova validação após um pequeno atraso para agrupar múltiplas mudanças
+        debounceTimer = setTimeout(async () => {
+          // Evita múltiplas validações simultâneas
+          if (this.validationInProgress) {
+            console.log('Validação já em andamento, aguardando...');
+            
+            // Aguarda até que a validação atual seja concluída
+            let waitAttempts = 0;
+            while (this.validationInProgress && waitAttempts < 10) {
+              await new Promise(resolve => setTimeout(resolve, 50));
+              waitAttempts++;
+            }
+            
+            // Se ainda estiver em validação após várias tentativas, desiste
+            if (this.validationInProgress) {
+              console.log('Desistindo de validação após múltiplas tentativas');
+              pendingValidation = false;
+              return;
+            }
+          }
+          
+          pendingValidation = false;
+          console.log('Executando validação após mudança no carrinho');
+          
+          try {
+            // Atualiza os elementos antes de validar
+            this.setupElements();
+            
+            // Executa a validação
+            await this.validateCart();
+          } catch (error) {
+            console.error('Erro ao validar carrinho após mutação DOM:', error);
+          }
+        }, 150); // 150ms de debounce para dar tempo de todas as mudanças ocorrerem
+      }
     });
     
+    // Função auxiliar para configurar observação em um elemento
+    const observeCartElement = (element, id) => {
+      if (!element) {
+        console.log(`Elemento ${id} não encontrado para observação`);
+        return;
+      }
+      
+      console.log(`Configurando observador para ${id}`);
+      cartObserver.observe(element, { 
+        childList: true, 
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          'data-cart-item-quantity', 
+          'data-cart-item-price', 
+          'data-cart-item-key',
+          'data-cart-item-product-id',
+          'data-cart-item-variant-id'
+        ]
+      });
+    };
+    
     // Observar o carrinho principal
-    const mainCart = document.getElementById('main-cart-items');
-    if (mainCart) {
-      cartObserver.observe(mainCart, { childList: true, subtree: true });
-    }
+    observeCartElement(document.getElementById('main-cart-items'), 'main-cart-items');
     
     // Observar o drawer do carrinho
-    const cartDrawer = document.getElementById('CartDrawer');
-    if (cartDrawer) {
-      cartObserver.observe(cartDrawer, { childList: true, subtree: true });
-    }
+    observeCartElement(document.getElementById('CartDrawer'), 'CartDrawer');
     
     // Observar o formulário do carrinho
-    const cartForm = document.getElementById('cart');
-    if (cartForm) {
-      cartObserver.observe(cartForm, { childList: true, subtree: true });
-    }
+    observeCartElement(document.getElementById('cart'), 'cart');
+    
+    // Observar a notificação do carrinho
+    observeCartElement(document.getElementById('cart-notification'), 'cart-notification');
+    
+    // Adiciona um evento de window.load para garantir que todos os elementos do carrinho foram carregados
+    window.addEventListener('load', () => {
+      if (!pendingValidation && !this.validationInProgress) {
+        this.setupElements();
+        this.validateCart().catch(error => {
+          console.error('Erro ao validar carrinho após carregamento da página:', error);
+        });
+      }
+    });
   }
 }
 
