@@ -58,3 +58,14 @@
     display: none;
   }
 {% endstyle %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.cartCategoryValidation === 'undefined') {
+      const script = document.createElement('script');
+      script.src = "{{ 'cart-category-validation.js' | asset_url }}";
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  });
+</script>

@@ -1,6 +1,9 @@
 /**
  * Cart Minimum Value - Implementação de valor mínimo de compra
  * Valor mínimo: R$90,00 (9000 centavos)
+ * 
+ * Este validador implementa um sistema de lock hierárquico para o botão de checkout,
+ * com prioridade menor (2) que o validador de categoria (1).
  */
 
 class CartMinimumValue {
@@ -12,6 +15,16 @@ class CartMinimumValue {
     this.checkoutButtons = [];
     this.errorContainer = null;
     
+    // Estado de validação
+    this.isValid = false;
+    
+    // Lock hierárquico - prioridade menor (2) que o validador de categoria (1)
+    this.lockPriority = 2;
+    this.checkoutLocked = false;
+    
+    // Expõe a instância globalmente para coordenação com outros validadores
+    window.cartMinimumValueInstance = this;
+    
     // Inicializa a validação
     this.init();
   }
@@ -21,6 +34,16 @@ class CartMinimumValue {
     this.setupElements();
     this.validateCart();
     this.setupEventListeners();
+    
+    // Escuta eventos do validador de categoria
+    document.addEventListener('category-validation-changed', (event) => {
+      if (event.detail && event.detail.isValid !== undefined) {
+        // Se a validação de categoria mudou para válida, revalida o carrinho
+        if (event.detail.isValid) {
+          this.validateCart();
+        }
+      }
+    });
   }
   
   setupElements() {
@@ -134,19 +157,42 @@ class CartMinimumValue {
    */
   isCartValid() {
     const cartTotal = this.getCartTotal();
-    return cartTotal >= this.minimumValue;
+    this.isValid = cartTotal >= this.minimumValue;
+    return this.isValid;
   }
   
   /**
    * Valida o carrinho e atualiza a UI conforme necessário
    */
   validateCart() {
-    if (this.isCartValid()) {
-      this.enableCheckout();
+    const previousState = this.isValid;
+    this.isCartValid(); // Atualiza this.isValid
+    
+    // Verifica se o validador de categoria está bloqueando o checkout
+    const categoryValidator = window.cartCategoryValidation;
+    const categoryBlocking = categoryValidator && !categoryValidator.isValid;
+    
+    if (this.isValid) {
+      this.checkoutLocked = false;
+      // Só habilita o checkout se o validador de categoria não estiver bloqueando
+      if (!categoryBlocking) {
+        this.enableCheckout();
+      }
       this.hideError();
     } else {
+      this.checkoutLocked = true;
       this.disableCheckout();
-      this.showError();
+      // Só mostra o erro se o validador de categoria não estiver mostrando um erro
+      if (!categoryBlocking) {
+        this.showError();
+      }
+    }
+    
+    // Se o estado mudou, dispara um evento personalizado para notificar outros validadores
+    if (previousState !== this.isValid) {
+      document.dispatchEvent(new CustomEvent('minimum-value-validation-changed', {
+        detail: { isValid: this.isValid, validator: this }
+      }));
     }
   }
   
@@ -155,8 +201,14 @@ class CartMinimumValue {
    */
   enableCheckout() {
     this.checkoutButtons.forEach(button => {
-      button.disabled = false;
-      button.classList.remove('button--disabled');
+      // Só habilita se o botão estiver bloqueado por este validador ou não estiver bloqueado
+      const lockedBy = button.getAttribute('data-locked-by');
+      if (!lockedBy || lockedBy === 'minimum-value-validator') {
+        button.disabled = false;
+        button.classList.remove('button--disabled');
+        button.removeAttribute('data-locked-by');
+        button.removeAttribute('data-lock-priority');
+      }
     });
   }
   
@@ -165,8 +217,16 @@ class CartMinimumValue {
    */
   disableCheckout() {
     this.checkoutButtons.forEach(button => {
-      button.disabled = true;
-      button.classList.add('button--disabled');
+      // Verifica se já existe um lock com prioridade mais alta
+      const currentPriority = parseInt(button.getAttribute('data-lock-priority') || '999');
+      
+      // Só aplica o lock se a prioridade deste validador for maior (número menor)
+      if (this.lockPriority < currentPriority) {
+        button.disabled = true;
+        button.classList.add('button--disabled');
+        button.setAttribute('data-locked-by', 'minimum-value-validator');
+        button.setAttribute('data-lock-priority', this.lockPriority);
+      }
     });
   }
   
@@ -174,36 +234,74 @@ class CartMinimumValue {
    * Exibe mensagem de erro
    */
   showError() {
-    if (this.errorContainer) {
-      this.errorContainer.textContent = this.errorMessage;
-      this.errorContainer.style.display = 'block';
-      this.errorContainer.classList.add('cart-error');
-    }
+    // Verifica se o validador de categoria está mostrando um erro
+    const categoryValidator = window.cartCategoryValidation;
+    const categoryShowingError = categoryValidator && !categoryValidator.isValid;
     
-    // Cria um elemento de erro para o drawer do carrinho se não existir
-    if (!document.querySelector('.cart-drawer-error')) {
-      const drawerFooter = document.querySelector('.cart-drawer__footer');
-      if (drawerFooter) {
-        const errorElement = document.createElement('div');
-        errorElement.className = 'cart-drawer-error';
-        errorElement.textContent = this.errorMessage;
-        errorElement.style.color = 'red';
-        errorElement.style.marginBottom = '10px';
-        drawerFooter.prepend(errorElement);
+    // Só mostra o erro se o validador de categoria não estiver mostrando um erro
+    if (!categoryShowingError) {
+      if (this.errorContainer) {
+        // Verifica se já existe um erro com prioridade mais alta
+        const currentPriority = parseInt(this.errorContainer.getAttribute('data-error-priority') || '999');
+        
+        // Só aplica o erro se a prioridade deste validador for maior (número menor)
+        if (this.lockPriority < currentPriority) {
+          this.errorContainer.textContent = this.errorMessage;
+          this.errorContainer.style.display = 'block';
+          this.errorContainer.classList.add('cart-error');
+          this.errorContainer.setAttribute('data-error-by', 'minimum-value-validator');
+          this.errorContainer.setAttribute('data-error-priority', this.lockPriority);
+        }
       }
-    }
-    
-    // Cria um elemento de erro para a notificação do carrinho se não existir
-    const cartNotification = document.querySelector('#cart-notification.active');
-    if (cartNotification && !cartNotification.querySelector('.cart-notification-error')) {
-      const notificationLinks = cartNotification.querySelector('.cart-notification__links');
-      if (notificationLinks) {
-        const errorElement = document.createElement('div');
-        errorElement.className = 'cart-notification-error';
-        errorElement.textContent = this.errorMessage;
-        errorElement.style.color = 'red';
-        errorElement.style.marginBottom = '10px';
-        notificationLinks.prepend(errorElement);
+      
+      // Cria um elemento de erro para o drawer do carrinho se não existir
+      const existingDrawerError = document.querySelector('.cart-drawer-error');
+      if (!existingDrawerError) {
+        const drawerFooter = document.querySelector('.cart-drawer__footer');
+        if (drawerFooter) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-drawer-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          errorElement.setAttribute('data-error-by', 'minimum-value-validator');
+          errorElement.setAttribute('data-error-priority', this.lockPriority);
+          drawerFooter.prepend(errorElement);
+        }
+      } else {
+        // Só atualiza a mensagem se este validador tiver prioridade mais alta
+        const currentPriority = parseInt(existingDrawerError.getAttribute('data-error-priority') || '999');
+        if (this.lockPriority < currentPriority) {
+          existingDrawerError.textContent = this.errorMessage;
+          existingDrawerError.setAttribute('data-error-by', 'minimum-value-validator');
+          existingDrawerError.setAttribute('data-error-priority', this.lockPriority);
+        }
+      }
+      
+      // Cria um elemento de erro para a notificação do carrinho se não existir
+      const cartNotification = document.querySelector('#cart-notification.active');
+      const existingNotificationError = cartNotification?.querySelector('.cart-notification-error');
+      
+      if (cartNotification && !existingNotificationError) {
+        const notificationLinks = cartNotification.querySelector('.cart-notification__links');
+        if (notificationLinks) {
+          const errorElement = document.createElement('div');
+          errorElement.className = 'cart-notification-error';
+          errorElement.textContent = this.errorMessage;
+          errorElement.style.color = 'red';
+          errorElement.style.marginBottom = '10px';
+          errorElement.setAttribute('data-error-by', 'minimum-value-validator');
+          errorElement.setAttribute('data-error-priority', this.lockPriority);
+          notificationLinks.prepend(errorElement);
+        }
+      } else if (existingNotificationError) {
+        // Só atualiza a mensagem se este validador tiver prioridade mais alta
+        const currentPriority = parseInt(existingNotificationError.getAttribute('data-error-priority') || '999');
+        if (this.lockPriority < currentPriority) {
+          existingNotificationError.textContent = this.errorMessage;
+          existingNotificationError.setAttribute('data-error-by', 'minimum-value-validator');
+          existingNotificationError.setAttribute('data-error-priority', this.lockPriority);
+        }
       }
     }
   }
@@ -212,21 +310,24 @@ class CartMinimumValue {
    * Esconde mensagem de erro
    */
   hideError() {
-    if (this.errorContainer) {
+    // Só esconde as mensagens de erro criadas por este validador
+    if (this.errorContainer && this.errorContainer.getAttribute('data-error-by') === 'minimum-value-validator') {
       this.errorContainer.textContent = '';
       this.errorContainer.style.display = 'none';
       this.errorContainer.classList.remove('cart-error');
+      this.errorContainer.removeAttribute('data-error-by');
+      this.errorContainer.removeAttribute('data-error-priority');
     }
     
-    // Remove mensagens de erro do drawer
+    // Remove mensagens de erro do drawer criadas por este validador
     const drawerError = document.querySelector('.cart-drawer-error');
-    if (drawerError) {
+    if (drawerError && drawerError.getAttribute('data-error-by') === 'minimum-value-validator') {
       drawerError.remove();
     }
     
-    // Remove mensagens de erro da notificação
+    // Remove mensagens de erro da notificação criadas por este validador
     const notificationError = document.querySelector('.cart-notification-error');
-    if (notificationError) {
+    if (notificationError && notificationError.getAttribute('data-error-by') === 'minimum-value-validator') {
       notificationError.remove();
     }
   }
@@ -263,15 +364,23 @@ class CartMinimumValue {
 
 // Inicializa a validação quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
-  new CartMinimumValue();
+  if (!window.cartMinimumValueInstance) {
+    window.cartMinimumValueInstance = new CartMinimumValue();
+  }
 });
 
 // Também inicializar quando o carrinho for atualizado via AJAX
 document.addEventListener('cart:update', () => {
-  new CartMinimumValue();
+  if (!window.cartMinimumValueInstance) {
+    window.cartMinimumValueInstance = new CartMinimumValue();
+  } else {
+    window.cartMinimumValueInstance.validateCart();
+  }
 });
 
 // Inicializa imediatamente para casos onde o DOM já está carregado
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  new CartMinimumValue();
+  if (!window.cartMinimumValueInstance) {
+    window.cartMinimumValueInstance = new CartMinimumValue();
+  }
 }

@@ -1,5 +1,9 @@
-- only_modify_quantity_input_validation: true
-- preserve_existing_cart_logic: true
-- always_use_mcp_tools: true
-- require_explicit_approval_before_any_other_change: true
-- include_comments_in_code: true
+dual_validation_coordination:
+  - prevent_dom_element_conflict: true
+  - implement_hierarchical_locking: true
+  - category_detection_via_collections_api: true
+  - preserve_existing_minimum_value_logic: true
+  - single_source_of_truth_for_checkout_state: true
+  - race_condition_prevention: true
+  - error_message_prioritization: required
+  - performance_impact_monitoring: true
