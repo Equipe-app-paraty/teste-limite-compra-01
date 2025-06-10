@@ -1,1 +1,425 @@
-{"sections":{"image_banner":{"type":"image-banner","blocks":{"heading":{"type":"heading","disabled":true,"settings":{"heading":"Browse our latest products","heading_size":"h0"}},"button":{"type":"buttons","disabled":true,"settings":{"button_label_1":"Shop all","button_link_1":"shopify:\/\/collections\/all","button_style_secondary_1":true,"button_label_2":"","button_link_2":"","button_style_secondary_2":false}}},"block_order":["heading","button"],"settings":{"image":"shopify:\/\/shop_images\/Banner_promocao_esfiha_de_carne_moderno_em_bege_e_pink_1.png","image_overlay_opacity":0,"image_height":"adapt","image_behavior":"none","desktop_content_position":"middle-center","desktop_content_alignment":"center","show_text_box":false,"color_scheme":"scheme-3","stack_images_on_mobile":false,"mobile_content_alignment":"left","show_text_below":false}},"collection_list_peV4LP":{"type":"collection-list","blocks":{"featured_collection_VrhqVV":{"type":"featured_collection","settings":{"collection":"kit-churrasco"}},"featured_collection_iQjEmY":{"type":"featured_collection","settings":{"collection":"cerveja-garrafa"}}},"block_order":["featured_collection_VrhqVV","featured_collection_iQjEmY"],"disabled":true,"name":"t:sections.collection-list.presets.name","settings":{"title":"Coleções","heading_size":"h2","image_ratio":"adapt","columns_desktop":3,"color_scheme":"","show_view_all":false,"columns_mobile":"2","swipe_on_mobile":true,"padding_top":36,"padding_bottom":36}},"featured_collection":{"type":"featured-collection","settings":{"collection":"kit-churrasco","products_to_show":8,"title":"🔥 Produtos em destaque","heading_size":"h2","description":"","show_description":false,"description_style":"body","columns_desktop":4,"enable_desktop_slider":true,"full_width":false,"show_view_all":false,"view_all_style":"solid","color_scheme":"scheme-1","image_ratio":"adapt","image_shape":"default","show_secondary_image":true,"show_vendor":false,"show_rating":false,"quick_add":"bulk","columns_mobile":"1","swipe_on_mobile":true,"padding_top":44,"padding_bottom":36}},"featured_collection_6V6DTb":{"type":"featured-collection","name":"t:sections.featured-collection.presets.name","settings":{"collection":"cerveja-garrafa","products_to_show":4,"title":"Bebidas","heading_size":"h2","description":"","show_description":false,"description_style":"body","columns_desktop":4,"enable_desktop_slider":true,"full_width":false,"show_view_all":true,"view_all_style":"solid","color_scheme":"","image_ratio":"adapt","image_shape":"default","show_secondary_image":false,"show_vendor":false,"show_rating":false,"quick_add":"bulk","columns_mobile":"1","swipe_on_mobile":true,"padding_top":36,"padding_bottom":36}},"image_with_text_eNBmd7":{"type":"image-with-text","blocks":{"heading_EaQe9M":{"type":"heading","settings":{"heading":"🛵Churrasco sem fila? Agora tem!","heading_size":"h2"}},"text_rweYG9":{"type":"text","settings":{"text":"<p>Esqueça as filas no mercado e a correria! No Bota na Brasa, você recebe o kit churrasco completo, prontinho para assar.<br\/><br\/>🔥 Nunca foi tão fácil fazer um churrasco!<br\/>🥩 Kits para 2 a 20 pessoas<br\/>🚚 Entregamos na sua porta em Paraty<br\/><br\/>Churrasco prático, saboroso e sem complicação! Peça já o seu!<\/p>","text_style":"body"}},"button_wzVUrT":{"type":"button","settings":{"button_label":"Escolha o seu kit","button_link":"shopify:\/\/collections\/kit-churrasco","button_style_secondary":false}}},"block_order":["heading_EaQe9M","text_rweYG9","button_wzVUrT"],"name":"t:sections.image-with-text.presets.name","settings":{"image":"shopify:\/\/shop_images\/JPG.jpg","height":"adapt","desktop_image_width":"small","layout":"text_first","image_behavior":"none","content_layout":"no-overlap","desktop_content_position":"top","desktop_content_alignment":"left","mobile_content_alignment":"left","section_color_scheme":"","color_scheme":"scheme-3","padding_top":36,"padding_bottom":36}},"collage_B6Lg6G":{"type":"collage","blocks":{"image_DLEqka":{"type":"image","settings":{}},"product_3hCJLr":{"type":"product","settings":{"product":"","second_image":false}},"collection_kHH3fy":{"type":"collection","settings":{"collection":""}}},"block_order":["image_DLEqka","product_3hCJLr","collection_kHH3fy"],"disabled":true,"name":"t:sections.collage.presets.name","settings":{"heading":"Colagem multimídia","heading_size":"h1","desktop_layout":"left","mobile_layout":"column","card_styles":"product-card-wrapper","color_scheme":"","padding_top":36,"padding_bottom":36}},"multirow_ibjRtA":{"type":"multirow","blocks":{"row_7LnAFf":{"type":"row","settings":{"caption":"Legenda","heading":"Linha","text":"<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.<\/p>","button_label":"Etiqueta de botão","button_link":""}},"row_wT3fUb":{"type":"row","settings":{"caption":"Legenda","heading":"Linha","text":"<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.<\/p>","button_label":"Etiqueta de botão","button_link":""}},"row_LjPDkX":{"type":"row","settings":{"caption":"Legenda","heading":"Linha","text":"<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.<\/p>","button_label":"Etiqueta de botão","button_link":""}}},"block_order":["row_7LnAFf","row_wT3fUb","row_LjPDkX"],"disabled":true,"name":"t:sections.multirow.presets.name","settings":{"image_height":"medium","desktop_image_width":"medium","image_layout":"alternate-left","heading_size":"h1","text_style":"body","button_style":"secondary","desktop_content_position":"middle","desktop_content_alignment":"left","mobile_content_alignment":"left","section_color_scheme":"","row_color_scheme":"","padding_top":36,"padding_bottom":36}},"image_banner_cRE8UY":{"type":"image-banner","blocks":{"heading_3hMyEA":{"type":"heading","disabled":true,"settings":{"heading":"Banner gráfico","heading_size":"h1"}},"text_CmWDPW":{"type":"text","disabled":true,"settings":{"text":"Dê informações a clientes sobre as imagens ou o conteúdo do banner no modelo.","text_style":"body"}},"buttons_34LUce":{"type":"buttons","disabled":true,"settings":{"button_label_1":"Etiqueta de botão","button_link_1":"","button_style_secondary_1":false,"button_label_2":"Etiqueta de botão","button_link_2":"","button_style_secondary_2":false}}},"block_order":["heading_3hMyEA","text_CmWDPW","buttons_34LUce"],"name":"t:sections.image-banner.presets.name","settings":{"image":"shopify:\/\/shop_images\/Black_yellow_sparkly_beer_package_promo_instagram_post_portrait_1.png","image_overlay_opacity":0,"image_height":"adapt","image_behavior":"none","desktop_content_position":"middle-center","desktop_content_alignment":"center","show_text_box":false,"color_scheme":"","stack_images_on_mobile":true,"mobile_content_alignment":"center","show_text_below":true}},"featured_product_7EQiNy":{"type":"featured-product","blocks":{"text_DgPpyC":{"type":"text","settings":{"text":"{{ section.settings.product.vendor }}","text_style":"uppercase"}},"title_dqLLhf":{"type":"title","settings":{"heading_size":"h1"}},"price_EdyaxH":{"type":"price","settings":{}},"variant_picker_dChppe":{"type":"variant_picker","settings":{"picker_type":"button","swatch_shape":"circle"}},"quantity_selector_Q8RyT4":{"type":"quantity_selector","settings":{}},"buy_buttons_aGaJQM":{"type":"buy_buttons","settings":{"show_dynamic_checkout":true,"show_gift_card_recipient":true}},"share_Fr9WNP":{"type":"share","settings":{"share_label":"Compartilhar"}}},"block_order":["text_DgPpyC","title_dqLLhf","price_EdyaxH","variant_picker_dChppe","quantity_selector_Q8RyT4","buy_buttons_aGaJQM","share_Fr9WNP"],"name":"t:sections.featured-product.presets.name","settings":{"product":"kit-2-10-cervejas","color_scheme":"","secondary_background":true,"media_size":"small","constrain_to_viewport":false,"media_fit":"cover","media_position":"left","image_zoom":"none","hide_variants":false,"enable_video_looping":false,"padding_top":36,"padding_bottom":36}}},"order":["image_banner","collection_list_peV4LP","featured_collection","featured_collection_6V6DTb","image_with_text_eNBmd7","collage_B6Lg6G","multirow_ibjRtA","image_banner_cRE8UY","featured_product_7EQiNy"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "image_banner": {
+      "type": "image-banner",
+      "blocks": {
+        "heading": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "heading": "Browse our latest products",
+            "heading_size": "h0"
+          }
+        },
+        "button": {
+          "type": "buttons",
+          "disabled": true,
+          "settings": {
+            "button_label_1": "Shop all",
+            "button_link_1": "shopify://collections/all",
+            "button_style_secondary_1": true,
+            "button_label_2": "",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading",
+        "button"
+      ],
+      "settings": {
+        "image": "shopify://shop_images/Banner_promocao_esfiha_de_carne_moderno_em_bege_e_pink_1.png",
+        "image_overlay_opacity": 0,
+        "image_height": "adapt",
+        "image_behavior": "none",
+        "desktop_content_position": "middle-center",
+        "desktop_content_alignment": "center",
+        "show_text_box": false,
+        "color_scheme": "scheme-3",
+        "stack_images_on_mobile": false,
+        "mobile_content_alignment": "left",
+        "show_text_below": false
+      }
+    },
+    "collection_list_peV4LP": {
+      "type": "collection-list",
+      "blocks": {
+        "featured_collection_VrhqVV": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "kit-churrasco"
+          }
+        },
+        "featured_collection_iQjEmY": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "cerveja-garrafa"
+          }
+        }
+      },
+      "block_order": [
+        "featured_collection_VrhqVV",
+        "featured_collection_iQjEmY"
+      ],
+      "disabled": true,
+      "name": "t:sections.collection-list.presets.name",
+      "settings": {
+        "title": "Coleções",
+        "heading_size": "h2",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "color_scheme": "",
+        "show_view_all": false,
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "featured_collection": {
+      "type": "featured-collection",
+      "settings": {
+        "collection": "kit-churrasco",
+        "products_to_show": 8,
+        "title": "🔥 Produtos em destaque",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "columns_desktop": 4,
+        "enable_desktop_slider": true,
+        "full_width": false,
+        "show_view_all": false,
+        "view_all_style": "solid",
+        "color_scheme": "scheme-1",
+        "image_ratio": "adapt",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "bulk",
+        "columns_mobile": "1",
+        "swipe_on_mobile": true,
+        "padding_top": 44,
+        "padding_bottom": 36
+      }
+    },
+    "featured_collection_6V6DTb": {
+      "type": "featured-collection",
+      "disabled": true,
+      "name": "t:sections.featured-collection.presets.name",
+      "settings": {
+        "collection": "cerveja-garrafa",
+        "products_to_show": 4,
+        "title": "Bebidas",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "columns_desktop": 4,
+        "enable_desktop_slider": true,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
+        "image_ratio": "adapt",
+        "image_shape": "default",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "bulk",
+        "columns_mobile": "1",
+        "swipe_on_mobile": true,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "image_with_text_eNBmd7": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading_EaQe9M": {
+          "type": "heading",
+          "settings": {
+            "heading": "🛵Churrasco sem fila? Agora tem!",
+            "heading_size": "h2"
+          }
+        },
+        "text_rweYG9": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Esqueça as filas no mercado e a correria! No Bota na Brasa, você recebe o kit churrasco completo, prontinho para assar.<br/><br/>🔥 Nunca foi tão fácil fazer um churrasco!<br/>🥩 Kits para 2 a 20 pessoas<br/>🚚 Entregamos na sua porta em Paraty<br/><br/>Churrasco prático, saboroso e sem complicação! Peça já o seu!</p>",
+            "text_style": "body"
+          }
+        },
+        "button_wzVUrT": {
+          "type": "button",
+          "settings": {
+            "button_label": "Escolha o seu kit",
+            "button_link": "shopify://collections/kit-churrasco",
+            "button_style_secondary": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_EaQe9M",
+        "text_rweYG9",
+        "button_wzVUrT"
+      ],
+      "name": "t:sections.image-with-text.presets.name",
+      "settings": {
+        "image": "shopify://shop_images/JPG.jpg",
+        "height": "adapt",
+        "desktop_image_width": "small",
+        "layout": "text_first",
+        "image_behavior": "none",
+        "content_layout": "no-overlap",
+        "desktop_content_position": "top",
+        "desktop_content_alignment": "left",
+        "mobile_content_alignment": "left",
+        "section_color_scheme": "",
+        "color_scheme": "scheme-3",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "collage_B6Lg6G": {
+      "type": "collage",
+      "blocks": {
+        "image_DLEqka": {
+          "type": "image",
+          "settings": {}
+        },
+        "product_3hCJLr": {
+          "type": "product",
+          "settings": {
+            "product": "",
+            "second_image": false
+          }
+        },
+        "collection_kHH3fy": {
+          "type": "collection",
+          "settings": {
+            "collection": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_DLEqka",
+        "product_3hCJLr",
+        "collection_kHH3fy"
+      ],
+      "disabled": true,
+      "name": "t:sections.collage.presets.name",
+      "settings": {
+        "heading": "Colagem multimídia",
+        "heading_size": "h1",
+        "desktop_layout": "left",
+        "mobile_layout": "column",
+        "card_styles": "product-card-wrapper",
+        "color_scheme": "",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "multirow_ibjRtA": {
+      "type": "multirow",
+      "blocks": {
+        "row_7LnAFf": {
+          "type": "row",
+          "settings": {
+            "caption": "Legenda",
+            "heading": "Linha",
+            "text": "<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.</p>",
+            "button_label": "Etiqueta de botão",
+            "button_link": ""
+          }
+        },
+        "row_wT3fUb": {
+          "type": "row",
+          "settings": {
+            "caption": "Legenda",
+            "heading": "Linha",
+            "text": "<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.</p>",
+            "button_label": "Etiqueta de botão",
+            "button_link": ""
+          }
+        },
+        "row_LjPDkX": {
+          "type": "row",
+          "settings": {
+            "caption": "Legenda",
+            "heading": "Linha",
+            "text": "<p>Combine um texto com uma imagem para destacar o produto, a coleção ou o post do blog escolhido. Adicione informações sobre disponibilidade, estilo ou até mesmo uma avaliação.</p>",
+            "button_label": "Etiqueta de botão",
+            "button_link": ""
+          }
+        }
+      },
+      "block_order": [
+        "row_7LnAFf",
+        "row_wT3fUb",
+        "row_LjPDkX"
+      ],
+      "disabled": true,
+      "name": "t:sections.multirow.presets.name",
+      "settings": {
+        "image_height": "medium",
+        "desktop_image_width": "medium",
+        "image_layout": "alternate-left",
+        "heading_size": "h1",
+        "text_style": "body",
+        "button_style": "secondary",
+        "desktop_content_position": "middle",
+        "desktop_content_alignment": "left",
+        "mobile_content_alignment": "left",
+        "section_color_scheme": "",
+        "row_color_scheme": "",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "image_banner_cRE8UY": {
+      "type": "image-banner",
+      "blocks": {
+        "heading_3hMyEA": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "heading": "Banner gráfico",
+            "heading_size": "h1"
+          }
+        },
+        "text_CmWDPW": {
+          "type": "text",
+          "disabled": true,
+          "settings": {
+            "text": "Dê informações a clientes sobre as imagens ou o conteúdo do banner no modelo.",
+            "text_style": "body"
+          }
+        },
+        "buttons_34LUce": {
+          "type": "buttons",
+          "disabled": true,
+          "settings": {
+            "button_label_1": "Etiqueta de botão",
+            "button_link_1": "",
+            "button_style_secondary_1": false,
+            "button_label_2": "Etiqueta de botão",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_3hMyEA",
+        "text_CmWDPW",
+        "buttons_34LUce"
+      ],
+      "name": "t:sections.image-banner.presets.name",
+      "settings": {
+        "image": "shopify://shop_images/Black_yellow_sparkly_beer_package_promo_instagram_post_portrait_1.png",
+        "image_overlay_opacity": 0,
+        "image_height": "adapt",
+        "image_behavior": "none",
+        "desktop_content_position": "middle-center",
+        "desktop_content_alignment": "center",
+        "show_text_box": false,
+        "color_scheme": "",
+        "stack_images_on_mobile": true,
+        "mobile_content_alignment": "center",
+        "show_text_below": true
+      }
+    },
+    "featured_product_7EQiNy": {
+      "type": "featured-product",
+      "blocks": {
+        "text_DgPpyC": {
+          "type": "text",
+          "settings": {
+            "text": "{{ section.settings.product.vendor }}",
+            "text_style": "uppercase"
+          }
+        },
+        "title_dqLLhf": {
+          "type": "title",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "price_EdyaxH": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker_dChppe": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "quantity_selector_Q8RyT4": {
+          "type": "quantity_selector",
+          "settings": {}
+        },
+        "buy_buttons_aGaJQM": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": true,
+            "show_gift_card_recipient": true
+          }
+        },
+        "share_Fr9WNP": {
+          "type": "share",
+          "settings": {
+            "share_label": "Compartilhar"
+          }
+        }
+      },
+      "block_order": [
+        "text_DgPpyC",
+        "title_dqLLhf",
+        "price_EdyaxH",
+        "variant_picker_dChppe",
+        "quantity_selector_Q8RyT4",
+        "buy_buttons_aGaJQM",
+        "share_Fr9WNP"
+      ],
+      "name": "t:sections.featured-product.presets.name",
+      "settings": {
+        "product": "kit-2-10-cervejas",
+        "color_scheme": "",
+        "secondary_background": true,
+        "media_size": "small",
+        "constrain_to_viewport": false,
+        "media_fit": "cover",
+        "media_position": "left",
+        "image_zoom": "none",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    }
+  },
+  "order": [
+    "image_banner",
+    "collection_list_peV4LP",
+    "featured_collection",
+    "featured_collection_6V6DTb",
+    "image_with_text_eNBmd7",
+    "collage_B6Lg6G",
+    "multirow_ibjRtA",
+    "image_banner_cRE8UY",
+    "featured_product_7EQiNy"
+  ]
+}
