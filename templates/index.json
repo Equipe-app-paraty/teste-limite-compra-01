@@ -51,41 +51,6 @@
         "show_text_below": false
       }
     },
-    "collection_list_peV4LP": {
-      "type": "collection-list",
-      "blocks": {
-        "featured_collection_VrhqVV": {
-          "type": "featured_collection",
-          "settings": {
-            "collection": "kit-churrasco"
-          }
-        },
-        "featured_collection_iQjEmY": {
-          "type": "featured_collection",
-          "settings": {
-            "collection": "cerveja-garrafa"
-          }
-        }
-      },
-      "block_order": [
-        "featured_collection_VrhqVV",
-        "featured_collection_iQjEmY"
-      ],
-      "disabled": true,
-      "name": "t:sections.collection-list.presets.name",
-      "settings": {
-        "title": "Coleções",
-        "heading_size": "h2",
-        "image_ratio": "adapt",
-        "columns_desktop": 3,
-        "color_scheme": "",
-        "show_view_all": false,
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
     "featured_collection": {
       "type": "featured-collection",
       "settings": {
@@ -369,89 +334,16 @@
         "mobile_content_alignment": "center",
         "show_text_below": true
       }
-    },
-    "featured_product_7EQiNy": {
-      "type": "featured-product",
-      "blocks": {
-        "text_DgPpyC": {
-          "type": "text",
-          "settings": {
-            "text": "{{ section.settings.product.vendor }}",
-            "text_style": "uppercase"
-          }
-        },
-        "title_dqLLhf": {
-          "type": "title",
-          "settings": {
-            "heading_size": "h1"
-          }
-        },
-        "price_EdyaxH": {
-          "type": "price",
-          "settings": {}
-        },
-        "variant_picker_dChppe": {
-          "type": "variant_picker",
-          "settings": {
-            "picker_type": "button",
-            "swatch_shape": "circle"
-          }
-        },
-        "quantity_selector_Q8RyT4": {
-          "type": "quantity_selector",
-          "settings": {}
-        },
-        "buy_buttons_aGaJQM": {
-          "type": "buy_buttons",
-          "settings": {
-            "show_dynamic_checkout": true,
-            "show_gift_card_recipient": true
-          }
-        },
-        "share_Fr9WNP": {
-          "type": "share",
-          "settings": {
-            "share_label": "Compartilhar"
-          }
-        }
-      },
-      "block_order": [
-        "text_DgPpyC",
-        "title_dqLLhf",
-        "price_EdyaxH",
-        "variant_picker_dChppe",
-        "quantity_selector_Q8RyT4",
-        "buy_buttons_aGaJQM",
-        "share_Fr9WNP"
-      ],
-      "disabled": true,
-      "name": "t:sections.featured-product.presets.name",
-      "settings": {
-        "product": "kit-2-10-cervejas",
-        "color_scheme": "",
-        "secondary_background": true,
-        "media_size": "small",
-        "constrain_to_viewport": false,
-        "media_fit": "cover",
-        "media_position": "left",
-        "image_zoom": "none",
-        "hide_variants": false,
-        "enable_video_looping": false,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
     }
   },
   "order": [
     "image_banner",
-    "collection_list_peV4LP",
     "featured_collection",
     "featured_collection_6V6DTb",
     "featured_collection_PEfxei",
     "image_with_text_eNBmd7",
     "collage_B6Lg6G",
     "multirow_ibjRtA",
-    "image_banner_cRE8UY",
-    "featured_product_7EQiNy"
+    "image_banner_cRE8UY"
   ]
 }
