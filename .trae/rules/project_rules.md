@@ -1,9 +1,11 @@
-dual_validation_coordination:
-  - prevent_dom_element_conflict: true
-  - implement_hierarchical_locking: true
-  - category_detection_via_collections_api: true
-  - preserve_existing_minimum_value_logic: true
-  - single_source_of_truth_for_checkout_state: true
-  - race_condition_prevention: true
-  - error_message_prioritization: required
-  - performance_impact_monitoring: true
+- always_use_mcp_tools: true
+- analyze_before_implement: true
+- focus_unified_validation_approach: true
+- preserve_minimum_value_logic: true
+- eliminate_complex_coordination: true
+- validate_category_names: true
+- implement_event_delegation: true
+- consider_shopify_functions_migration: true
+- no_multiple_mutation_observers: true
+- prevent_race_conditions: true
+- simplify_architecture_radically: true
