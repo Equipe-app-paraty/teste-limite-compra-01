@@ -75,41 +75,11 @@
       "settings": {
         "include_margins": true
       }
-    },
-    "featured_collection_fYDVmL": {
-      "type": "featured-collection",
-      "name": "t:sections.featured-collection.presets.name",
-      "settings": {
-        "collection": "cerveja-garrafa",
-        "products_to_show": 25,
-        "title": "Coleção em destaque",
-        "heading_size": "h2",
-        "description": "",
-        "show_description": false,
-        "description_style": "body",
-        "columns_desktop": 6,
-        "enable_desktop_slider": false,
-        "full_width": false,
-        "show_view_all": false,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "adapt",
-        "image_shape": "default",
-        "show_secondary_image": false,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "bulk",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 0,
-        "padding_bottom": 0
-      }
     }
   },
   "order": [
     "cart-items",
     "cart-footer",
-    "17487024964be3dce0",
-    "featured_collection_fYDVmL"
+    "17487024964be3dce0"
   ]
 }
