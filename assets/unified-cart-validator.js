@@ -15,10 +15,10 @@ class UnifiedCartValidator {
   constructor() {
     // Configurações de validação
     this.minimumValue = 9000; // R$90 em centavos
-    this.restrictedCategory = 'cerveja';
-    this.requiredCategories = ['kit churrasco', 'avulsos'];
+    this.restrictedCategory = 'cerveja-garrafa'; // Atualizado de 'cerveja' para 'cerveja-garrafa'
+    this.requiredCategories = ['kit-churrasco', 'frontpage']; // Atualizado de ['kit churrasco', 'avulsos'] para ['kit-churrasco', 'frontpage']
     this.errorMessages = {
-      category: 'Produtos da categoria "cerveja" só podem ser comprados com "kit churrasco" OU "avulsos"',
+      category: 'Produtos da categoria "cerveja-garrafa" só podem ser comprados com "kit churrasco" OU "avulsos"',
       minimum: 'Valor mínimo de R$90 para finalizar a compra'
     };
     
@@ -166,24 +166,47 @@ class UnifiedCartValidator {
    * @returns {Promise} - Promise com as coleções do produto
    */
   fetchProductCollections(productId) {
-    // Esta função simula a busca de coleções, já que a API JS do Shopify não fornece
-    // diretamente as coleções de um produto. Em um ambiente real, isso seria
-    // implementado via API GraphQL ou endpoint personalizado.
-    
-    // Para fins de demonstração, vamos usar uma abordagem baseada em atributos data
-    // que podem ser adicionados aos elementos do produto no carrinho
+    // Buscar coleções via atributos data
     const productElements = document.querySelectorAll(`[data-product-id="${productId}"]`);
     const collections = [];
     
     productElements.forEach(element => {
-      const collectionsData = element.getAttribute('data-product-collections');
-      if (collectionsData) {
+      // Verificar atributos data-collection ou data-product-collections
+      const collectionData = element.getAttribute('data-collection') || 
+                          element.getAttribute('data-product-collections');
+      
+      if (collectionData) {
         try {
-          const parsedCollections = JSON.parse(collectionsData);
-          collections.push(...parsedCollections);
+          // Tentar como JSON primeiro
+          const parsedCollections = JSON.parse(collectionData);
+          if (Array.isArray(parsedCollections)) {
+            collections.push(...parsedCollections);
+          } else {
+            collections.push(collectionData);
+          }
         } catch (e) {
-          console.error('Erro ao parsear coleções:', e);
+          // Se não for JSON, adicionar como string
+          collections.push(collectionData);
         }
+      }
+    });
+    
+    // Verificar também classes que possam indicar a coleção
+    productElements.forEach(element => {
+      const classes = element.classList;
+      for (const cls of classes) {
+        if (cls.startsWith('collection-') || cls.includes('-collection')) {
+          collections.push(cls.replace('collection-', '').replace('-collection', ''));
+        }
+      }
+    });
+    
+    // Adicionar verificação para atributos data-section-type que podem indicar a coleção
+    const sectionElements = document.querySelectorAll('[data-section-type="featured-collection"]');
+    sectionElements.forEach(section => {
+      const collectionId = section.getAttribute('data-collection-id');
+      if (collectionId) {
+        collections.push(collectionId);
       }
     });
     
@@ -198,13 +221,13 @@ class UnifiedCartValidator {
   async isBeerProduct(product) {
     if (!product) return false;
     
-    // Estratégia 1: Verificar pelo product_type
-    if (product.product_type && product.product_type.toLowerCase().includes(this.restrictedCategory)) {
+    // Estratégia 1: Verificar pelo handle do produto (mais confiável)
+    if (product.handle && product.handle.toLowerCase().includes(this.restrictedCategory)) {
       return true;
     }
     
-    // Estratégia 2: Verificar pelo handle do produto
-    if (product.handle && product.handle.toLowerCase().includes(this.restrictedCategory)) {
+    // Estratégia 2: Verificar pelo product_type
+    if (product.product_type && product.product_type.toLowerCase().includes(this.restrictedCategory)) {
       return true;
     }
     
@@ -217,11 +240,12 @@ class UnifiedCartValidator {
       }
     }
     
-    // Estratégia 4: Verificar pelas coleções do produto
+    // Estratégia 4: Verificar pelas coleções do produto (mais preciso)
     try {
       const collections = await this.fetchProductCollections(product.id);
       for (const collection of collections) {
-        if (collection.toLowerCase().includes(this.restrictedCategory)) {
+        if (collection.toLowerCase() === this.restrictedCategory || 
+            collection.toLowerCase().includes(this.restrictedCategory)) {
           return true;
         }
       }
@@ -251,19 +275,19 @@ class UnifiedCartValidator {
   async isRequiredCategoryProduct(product) {
     if (!product) return false;
     
-    // Estratégia 1: Verificar pelo product_type
-    if (product.product_type) {
+    // Estratégia 1: Verificar pelo handle do produto (mais confiável)
+    if (product.handle) {
       for (const category of this.requiredCategories) {
-        if (product.product_type.toLowerCase().includes(category)) {
+        if (product.handle.toLowerCase().includes(category)) {
           return true;
         }
       }
     }
     
-    // Estratégia 2: Verificar pelo handle do produto
-    if (product.handle) {
+    // Estratégia 2: Verificar pelo product_type
+    if (product.product_type) {
       for (const category of this.requiredCategories) {
-        if (product.handle.toLowerCase().includes(category)) {
+        if (product.product_type.toLowerCase().includes(category)) {
           return true;
         }
       }
@@ -280,12 +304,13 @@ class UnifiedCartValidator {
       }
     }
     
-    // Estratégia 4: Verificar pelas coleções do produto
+    // Estratégia 4: Verificar pelas coleções do produto (mais preciso)
     try {
       const collections = await this.fetchProductCollections(product.id);
       for (const collection of collections) {
         for (const category of this.requiredCategories) {
-          if (collection.toLowerCase().includes(category)) {
+          if (collection.toLowerCase() === category || 
+              collection.toLowerCase().includes(category)) {
             return true;
           }
         }
@@ -313,7 +338,7 @@ class UnifiedCartValidator {
   }
   
   /**
-   * Verifica se o carrinho contém produtos da categoria "cerveja"
+   * Verifica se o carrinho contém produtos da categoria "cerveja-garrafa"
    * @returns {Promise<boolean>} - Promise que resolve para true se o carrinho contiver cerveja
    */
   async hasBeerProducts() {
@@ -365,7 +390,7 @@ class UnifiedCartValidator {
    * @returns {Promise<{valid: boolean, message: string}>} - Resultado da validação
    */
   async validateCategories() {
-    // Verifica se o carrinho contém produtos da categoria "cerveja"
+    // Verifica se o carrinho contém produtos da categoria "cerveja-garrafa"
     const hasBeer = await this.hasBeerProducts();
     
     // Se não tiver cerveja, a validação de categoria é sempre válida
@@ -449,6 +474,19 @@ class UnifiedCartValidator {
       
       // Valida valor mínimo
       this.isValid.minimum = this.validateMinimumValue();
+      
+      // Adiciona log para depuração
+      console.log('Validação do carrinho:', {
+        categorias: {
+          válido: this.isValid.category,
+          mensagem: categoryValidation.message
+        },
+        valorMínimo: {
+          válido: this.isValid.minimum,
+          valorAtual: this.getCartTotal(),
+          valorMínimo: this.minimumValue
+        }
+      });
       
       // Atualiza a UI com base nos resultados
       if (!this.isValid.category) {
