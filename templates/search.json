@@ -11,6 +11,7 @@
   "sections": {
     "main": {
       "type": "main-search",
+      "disabled": true,
       "settings": {
         "columns_desktop": 4,
         "columns_mobile": "2",
